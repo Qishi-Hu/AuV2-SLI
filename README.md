@@ -1,4 +1,4 @@
-# Auv2-SLI
+# AuV2-SLI
 
 This repository serves a structured light illumination (SLI) system orchestrated by an FPGA controller. The system is based on the Alchitry Au V2 board, which is powered by an Artix-7 FPGA. The board is extended with an Hd V2 board that has two HDMI shields and a Br V2 board for GPIO connections with external DB9 camera modules following a 4-line protocol.
 
