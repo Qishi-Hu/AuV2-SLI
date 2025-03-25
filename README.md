@@ -37,7 +37,7 @@ The **Active Signal Mode** is the actual setting of the HDMI signal, if it is no
 - For top-down scanning, `indexMapping.m` maps the combination of a pixel’s row index and frame index to an index in the start frame LUT. This MATLAB script outputs the `indexMap.coe` that initializes a read-only memory (ROM) module on the FPGA to store the mapping.
 - For side-to-side scanning, `indexMappingV.m` maps the combination of a pixel’s column index and frame index to an index in the start frame LUT. This MATLAB script outputs the `indexMapV.coe` that initializes a read-only memory (ROM) module on the FPGA to store the mapping.
 - The start frame LUTs for both scanning orientations are defined in `LUT2coe.m`, which outputs `LUT.coe` and `LUT_V.coe` so that they can be hardcoded through read-only memory (ROM) modules.
-- The FPGA increments the frame index and triggers the camera on VSYNC, as long as the camera signals that it is ready (by sending a rising edge between VSYNCs).
+- The FPGA increments the frame index and triggers the camera on VSYNC, as long as the camera signals that it is ready (by sending a rising edge).
 
 ## GPIO pin assignments
 | Camera Interface  | FPGA Pins | DB9 Pins | Purpose                                         | I/O (from FPGA's POV)             |
