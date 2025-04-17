@@ -25,12 +25,12 @@ The **Active Signal Mode** is the actual setting of the HDMI signal, if it is no
 ## Specifications of FPGA Controller Modes
 
 ### 1. Pass-through with Top-Left Pixel Detection
-- The FPGA functions as an HDMI pass-through capable of **720p@60Hz**. The PC is responsible for playing back the SLI patterns.
+- The FPGA functions as an HDMI pass-through capable of **720p@120Hz**. The PC is responsible for playing back the SLI patterns.
 - The FPGA reads the **top-left pixel (TLP)** value of each frame.
 - If the current frame has a different TLP value from the previous frame, the FPGA sends a pulse to trigger the camera shutter during the next VSYNC period.
 - The host PC waits for confirmation that the camera is ready before playing the next frame.
 
-### 2. Local SLI Pattern Generation
+### 2. Pass-through with SLI Pattern Generation
 - The FPGA replaces the input HDMI frames with locally generated SLI patterns. If the HDMI input is absent, it simply creates the pattern locally. 
 - The current pattern is a 24-frame sequence, where each row of a frame contains identical pixel values corresponding to the row index.
 - The start frame is defined by a **Look-Up Table (LUT)**, and subsequent frames are derived by modifying the spatial and temporal frequencies of the first frame.
