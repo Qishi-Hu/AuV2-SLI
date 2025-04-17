@@ -8,7 +8,7 @@ In this project, the FPGA can:
 - Synchronize the projection and capture of each frame by interacting with the camera modules through the GPIO pins via the 4-line protocol.
 - When the HDMI input cable is unplugged, the FPGA will be driven by the local oscillator clock instead of the HDMI Rx clock, dedicated to the local pattern generation mode only.
 
-The phase images captured by the camera modules are sent to the host PC through USB, and a host Qt program will complete the 3-D reconstruction.
+The phase images captured by the camera modules are sent to the host PC through USB, and a host Qt program will complete the 3-D reconstruction. The system can scan 1280x720 resolution at 120FPS.
 
 ## How to configure the bitstream?
 
