@@ -24,7 +24,7 @@
 module clk_selector (
     input rx, tmds_clk,
     input hdmi_clk, hdmi_clk1, hdmi_clk5, vsync,
-    input clk75, clk375, clk10,  
+    input clk125, clk625, clk10,  
     output reg sel,
     output oclk, oclk1, oclk5
 );
@@ -53,21 +53,21 @@ module clk_selector (
    
     BUFGMUX mux (
     .O(oclk),  // Output clock
-    .I0(clk75),    // Input clock 1
+    .I0(clk125),    // Input clock 1
     .I1(hdmi_clk),    // Input clock 2
     .S(sel)    // Select signal
     );
     
     BUFGMUX mux_x1 (
     .O(oclk1),  // Output clock
-    .I0(clk75),    // Input clock 1
+    .I0(clk125),    // Input clock 1
     .I1(hdmi_clk1),    // Input clock 2
     .S(sel)    // Select signal
     );
     
     BUFGMUX mux_x5 (
     .O(oclk5),  // Output clock
-    .I0(clk375),    // Input clock 1
+    .I0(clk625),    // Input clock 1
     .I1(hdmi_clk5),    // Input clock 2
     .S(sel)    // Select signal
     );

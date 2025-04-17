@@ -19,14 +19,14 @@ end entity;
 
 architecture Behavioral of edid_rom is
 
-   type a_edid_rom is array (0 to 255) of std_logic_vector(7 downto 0);
+   type a_edid_rom is array (0 to 127) of std_logic_vector(7 downto 0); -- 256 bytes if with one ext. block
 
    signal edid_rom : a_edid_rom := (
       ------- BASE EDID Bytes 0 to 35 -----------------------------
       -- Header
       x"00",x"FF",x"FF",x"FF",x"FF",x"FF",x"FF",x"00",
       -- EISA ID - Manufacturer, Product,
-      x"04",x"43", x"07",x"f2", 
+      x"0C",x"43", x"07",x"f2", 
       -- EISA ID -Serial
       x"01",x"00",x"00",x"00",
       -- Model/year
@@ -36,72 +36,72 @@ architecture Behavioral of edid_rom is
       ------------------------------------
       ------------------------------------
       -- Digital Video using DVI, 8 bits
-      --- x"81",   -- Checksum 0xB6 
+      --- x"81",  
       ------------------------------------
       -- Digital Video using HDMI, 8 bits
-      x"A2", -- Checksum 0x95 
+      x"A2", 
       ------------------------------------
       -- Aspect ratio, flag, gamma
       x"4f", x"00", x"78", 
       ------------------------------------      
       -- Features 
-      x"3E",
+      x"06", -- only full RGB 444
       -- Display x,y Chromaticity V Breaks here!
       x"EE", x"91", x"a3", x"54", x"4c", x"99", x"26", x"0f", x"50", x"54",
       -- Established timings
-      x"20", x"00", x"00",
+      x"00", x"00", x"00",
       -- Standard timings
       x"01", x"01", x"01", x"01", x"01", x"01", x"01", x"01", 
       x"01", x"01", x"01", x"01", x"01", x"01", x"01", x"01", 
       ------- End of BASE EDID ---------------------------------
 
-     ----- 18 byte data block 720p --------
+     ----- 18 byte data block 720p 120Hz CVT-RBv2--------
       -- Pixel clock  
-      x"2C",x"1D",
-      -- Horizontal 1920 with 280 blanking 
-      x"00", x"80", x"51",
-      -- Vertical 1080 with 45 lines blanking 
-      x"D0", x"1C", x"20",
-      -- Horizontal front porch  +223
-      x"40",x"80",
-      -- Vertical front porch -- SEEMS WRONG! 
-      x"35",x"00",
+      x"D4",x"30",
+      -- Horizontal 1280 (0x500) with 80 (0x050) blanking 
+      x"00", x"50", x"50",
+      -- Vertical 720 (0x2D0) with 43 (0x02B) lines blanking 
+      x"D0", x"2B", x"20",
+      -- Horizontal front porch  8 hsycn width 32 
+      x"08",x"20",
+      -- Vertical front porch 29 vysnc width 8
+      x"D8",x"04",
       -- Horizontal and vertical image size
       x"0f", x"48", x"42",
       -- Horizontal and vertical boarder 
       x"00", x"00",
-      -- Options (non-interlaces, not 3D, syncs...)
+      -- Options (non-interlaces, not 3D, syncs...) 00011110= 1E (Digital Sync with positive H and V polority)
       x"1E",
 
-      ----- 18 byte data block 720p --------
-      -- Pixel clock  74.5 MHz
-      x"1A",x"1D",
-      -- Horizontal 1920 with 280 blanking 
-      x"00", x"80", x"51",
-      -- Vertical 1080 with 45 lines blanking 
-      x"D0", x"1C", x"20",
-      -- Horizontal front porch  +223
-      x"40",x"80",
-      -- Vertical front porch -- SEEMS WRONG! 
-      x"35",x"00",
+      ----- 18 byte data block 600p CVT-RB 120Hz-------- (we can handle CVT, but Optoma can only work with CVT-RB)
+      -- Pixel clock  73.25MHz
+      x"9D",x"1C",
+      -- Horizontal 800 (0x320) with 160 (0x0A0) blanking 
+      x"20", x"A0", x"30",
+      -- Vertical 600 (0x258) with 36 (0x024) lines blanking 
+      x"58", x"24", x"20",
+      -- Horizontal front porch  48 (0x30) hsycn width 32 (0x20) 
+      x"30",x"20",
+      -- Vertical front porch 3 vysnc width 4
+      x"34",x"00",
       -- Horizontal and vertical image size
       x"0f", x"48", x"42",
       -- Horizontal and vertical boarder 
       x"00", x"00",
-      -- Options (non-interlaces, not 3D, syncs...)
-      x"1E",
+      -- 00011010= 1A (V negtive H positive) or IE for both positive
+      x"1A",
 
-      ----- 18 byte data block 720p --------
+      ----- 18 byte data block 720p 60Hz-------- (CEA-861 for Optoma)
       -- Pixel clock  74.25MHz
       x"01",x"1D",
-      -- Horizontal 1920 with 280 blanking 
-      x"00", x"80", x"51",
-      -- Vertical 1080 with 45 lines blanking 
-      x"D0", x"1C", x"20",
-      -- Horizontal front porch  +223
-      x"40",x"80",
-      -- Vertical front porch -- SEEMS WRONG! 
-      x"35",x"00",
+      -- Horizontal 1280 (0x500) with 370 (0x172) blanking 
+      x"00", x"72", x"51",
+      -- Vertical 720 (0x2D0) with 30 (0x01E) lines blanking 
+      x"D0", x"1E", x"20",
+      -- Horizontal front porch 110 hsycn width 40 
+      x"6E",x"28",
+      -- Vertical front porch 5 vysnc width 5
+      x"55",x"00",
       -- Horizontal and vertical image size
       x"0f", x"48", x"42",
       -- Horizontal and vertical boarder 
@@ -112,22 +112,22 @@ architecture Behavioral of edid_rom is
       ----- 18 byte data block 720p --------
       -- Monitor name ASCII descriptor
       x"00", x"00", x"00", x"FC", x"00",
-      -- ASCII name - "NUMATOmA7"
-     x"4E", x"55", x"4D", x"41", x"54", x"4F", x"6D", x"41", x"37",
+      -- ASCII name - "Qishi-SLI"
+     x"51", x"69", x"73", x"68", x"69", x"2D", x"53", x"4C", x"49",
      x"0A", x"20", x"20", x"20",
 
       ----- End of EDID block
-      -- Extension flag & checksum  +0
-      x"01", x"4C",
+      -- Extension flag & checksum  - No extension 
+      x"00", x"F5"
       
-       x"02", x"03", x"18", x"72", x"47", x"90", x"85", x"04", x"03", x"02", x"07", x"06", x"23", x"09", x"07", x"07",
-       x"83", x"01", x"00", x"00", x"65", x"03", x"0C", x"00", x"10", x"00", x"8E", x"0A", x"D0", x"8A", x"20", x"E0",
-       x"2d", x"10", x"10", x"3E", x"96", x"00", x"1F", x"09", x"00", x"00", x"00", x"18", x"8E", x"0A", x"D0", x"8A",
-       x"20", x"E0", x"2D", x"10", x"10", x"3E", x"96", x"00", x"04", x"03", x"00", x"00", x"00", x"18", x"8E", x"0A",
-       x"A0", x"14", x"51", x"F0", x"16", x"00", x"26", x"7C", x"43", x"00", x"1F", x"09", x"00", x"00", x"00", x"98",
-       x"8E", x"0A", x"A0", x"14", x"51", x"F0", x"16", x"00", x"26", x"7C", x"43", x"00", x"04", x"03", x"00", x"00",
-       x"00", x"98", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",
-       x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"C9"
+--       x"02", x"03", x"18", x"72", x"47", x"90", x"85", x"04", x"03", x"02", x"07", x"06", x"23", x"09", x"07", x"07",
+--       x"83", x"01", x"00", x"00", x"65", x"03", x"0C", x"00", x"10", x"00", x"8E", x"0A", x"D0", x"8A", x"20", x"E0",
+--       x"2d", x"10", x"10", x"3E", x"96", x"00", x"1F", x"09", x"00", x"00", x"00", x"18", x"8E", x"0A", x"D0", x"8A",
+--       x"20", x"E0", x"2D", x"10", x"10", x"3E", x"96", x"00", x"04", x"03", x"00", x"00", x"00", x"18", x"8E", x"0A",
+--       x"A0", x"14", x"51", x"F0", x"16", x"00", x"26", x"7C", x"43", x"00", x"1F", x"09", x"00", x"00", x"00", x"98",
+--       x"8E", x"0A", x"A0", x"14", x"51", x"F0", x"16", x"00", x"26", x"7C", x"43", x"00", x"04", x"03", x"00", x"00",
+--       x"00", x"98", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",
+--       x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"C9"
       
       );
 

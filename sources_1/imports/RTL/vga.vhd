@@ -5,17 +5,35 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity vga is
    generic (
+      --      hRez       : natural := 1280;	
+--      hStartSync : natural := 1390;
+--      hEndSync   : natural := 1430;
+--      hMaxCount  : natural := 1650;
+--      hsyncActive : std_logic := '1';
+		
+--      vRez       : natural := 720;
+--      vStartSync : natural := 725;
+--      vEndSync   : natural := 730;
+--      vMaxCount  : natural := 750;
+--      vsyncActive : std_logic := '1'
+
       hRez       : natural := 1280;	
-      hStartSync : natural := 1390;
-      hEndSync   : natural := 1430;
-      hMaxCount  : natural := 1650;
+      hStartSync : natural := 1288;
+      hEndSync   : natural := 1320;
+      hMaxCount  : natural := 1360;
       hsyncActive : std_logic := '1';
 		
       vRez       : natural := 720;
-      vStartSync : natural := 725;
-      vEndSync   : natural := 730;
-      vMaxCount  : natural := 750;
+      vStartSync : natural := 749;
+      vEndSync   : natural := 757;
+      vMaxCount  : natural := 763;
       vsyncActive : std_logic := '1'
+
+--      vRez       : natural := 720;
+--      vStartSync : natural := 727;
+--      vEndSync   : natural := 735;
+--      vMaxCount  : natural := 741;
+--      vsyncActive : std_logic := '1'    
    );
 
     Port ( pixelClock : in  STD_LOGIC;

@@ -584,7 +584,7 @@ reset_proc2: process(clk_pixel)
 CE_Delay : delay1Bit 
    port map (
    clk => clk_pixel,
-      d => ser_ce_buf, -- 1-bit input: Clock input (connect to an IBUF or BUFMR).
-      q => ser_ce      -- 1-bit output: Clock output (connect to I/O clock loads).
+      d => ser_ce_buf, 
+      q => ser_ce     
    );
 end Behavioral;

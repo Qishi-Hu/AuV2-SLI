@@ -15,8 +15,8 @@ entity hdmi_io is
     port (
         clk100        : in STD_LOGIC;
         clk200        : in STD_LOGIC;
-        clk75 : in STD_LOGIC;
-        clk375 : in STD_LOGIC;
+        clk125 : in STD_LOGIC;
+        clk625 : in STD_LOGIC;
         clk10 : in STD_LOGIC;
         -------------------------------
         -- Control signals
@@ -99,8 +99,8 @@ architecture Behavioral of hdmi_io is
         hdmi_clk1    : in  std_logic;      -- HDMI clock
         hdmi_clk5    : in  std_logic;      -- HDMI clock
         vsync : in  std_logic; 
-        clk75   : in  std_logic;      -- Local clock
-        clk375   : in  std_logic;      -- Local clock
+        clk125   : in  std_logic;      -- Local clock
+        clk625   : in  std_logic;      -- Local clock
         clk10   : in  std_logic;      -- Local clock for plug detection
         oclk      : out std_logic;
         oclk5      : out std_logic;
@@ -340,7 +340,7 @@ i_clk_sel: clk_selector port map(
         hdmi_clk =>  pixel_clk_i,
         hdmi_clk1=> pixel_io_clk_x1,
         hdmi_clk5=> pixel_io_clk_x5,
-        clk75=>clk75, clk375=>clk375, clk10=>clk10,
+        clk125=>clk125, clk625=>clk625, clk10=>clk10,
         oclk=>oclk, oclk1=>oclk1, oclk5=>oclk5, 
         sel => sel
 );    

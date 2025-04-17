@@ -47,7 +47,7 @@ begin
 IDELAYE2_inst : IDELAYE2
     generic map (
           CINVCTRL_SEL          => "FALSE",
-          DELAY_SRC             => "DATAIN",
+          DELAY_SRC             => "IDATAIN",
           HIGH_PERFORMANCE_MODE => "TRUE",
           IDELAY_TYPE           => "VAR_LOAD",
           IDELAY_VALUE          => 0,
@@ -56,8 +56,8 @@ IDELAYE2_inst : IDELAYE2
           SIGNAL_PATTERN        => "DATA"
     )
     port map (
-          DATAIN      => serial,
-          IDATAIN     => '0',
+          IDATAIN      => serial,
+          DATAIN     => '0',
           DATAOUT     => delayed,
           --
           CNTVALUEOUT => open,

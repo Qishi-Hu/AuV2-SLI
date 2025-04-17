@@ -7,9 +7,11 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-
 library UNISIM;
 use UNISIM.VComponents.all;
+use IEEE.STD_LOGIC_ARITH.ALL;  -- optional, for older VHDL versions
+use IEEE.STD_LOGIC_UNSIGNED.ALL; -- optional, for older VHDL versions
+use IEEE.NUMERIC_STD.ALL;      -- Required for unsigned arithmetic
 
 entity Au2_SLI is
     Port ( 
@@ -53,16 +55,16 @@ architecture Behavioral of Au2_SLI is
         clk_in    : in STD_LOGIC;    
         clk_out : out STD_LOGIC;
         clk10 : out STD_LOGIC;
-        clk75 : out STD_LOGIC;
-        clk375 : out STD_LOGIC
+        clk125 : out STD_LOGIC;
+        clk625 : out STD_LOGIC
     );
     end component;
     component hdmi_io is
     Port ( 
         clk100    : in STD_LOGIC;
         clk200    : in STD_LOGIC;
-        clk75 : in STD_LOGIC;
-        clk375 : in STD_LOGIC;
+        clk125 : in STD_LOGIC;
+        clk625 : in STD_LOGIC;
         clk10 : in STD_LOGIC;
         -------------------------------
         -- Control signals
@@ -136,9 +138,10 @@ architecture Behavioral of Au2_SLI is
     end component;
     signal clk200  : std_logic;
     signal clk10  : std_logic;
-    signal clk75  : std_logic;
-    signal clk375  : std_logic;
+    signal clk125  : std_logic;
+    signal clk625  : std_logic;
     signal pclk  : std_logic;
+    signal VPolarity  : std_logic;
     signal symbol_sync  : std_logic;
     signal symbol_ch0   : std_logic_vector(9 downto 0);
     signal symbol_ch1   : std_logic_vector(9 downto 0);
@@ -165,6 +168,7 @@ architecture Behavioral of Au2_SLI is
             in_blank  : in std_logic;
             in_hsync  : in std_logic;
             in_vsync  : in std_logic;
+            vsync  : in std_logic;
             in_red    : in std_logic_vector(7 downto 0);
             in_green  : in std_logic_vector(7 downto 0);
             in_blue   : in std_logic_vector(7 downto 0);
@@ -182,9 +186,12 @@ architecture Behavioral of Au2_SLI is
 
     signal not_C1in1 : std_logic;
     signal pixel_clk : std_logic;
+    signal sel_buf  : std_logic;
     signal in_blank  : std_logic;
+    signal in_blank_reg  : std_logic;
     signal in_hsync  : std_logic;
     signal in_vsync  : std_logic;
+    signal in_vsync_reg  : std_logic;
     signal in_red    : std_logic_vector(7 downto 0);
     signal in_green  : std_logic_vector(7 downto 0);
     signal in_blue   : std_logic_vector(7 downto 0);
@@ -197,6 +204,9 @@ architecture Behavioral of Au2_SLI is
     signal blank  : std_logic;
     signal hsync  : std_logic;
     signal vsync  : std_logic;
+    signal vsync_Pos  : std_logic;
+    signal vsync_reg  : std_logic;
+    signal vsync_dur  : std_logic_vector(7 downto 0);
     signal red    : std_logic_vector(7 downto 0);
     signal green  : std_logic_vector(7 downto 0);
     signal blue   : std_logic_vector(7 downto 0);
@@ -208,7 +218,8 @@ architecture Behavioral of Au2_SLI is
     signal out_red   : std_logic_vector(7 downto 0);
     signal out_green : std_logic_vector(7 downto 0);
     signal out_blue  : std_logic_vector(7 downto 0);
-
+    signal rdy_buf : std_logic;
+    signal mode_buf : std_logic;
     signal audio_channel : std_logic_vector(2 downto 0);
     signal audio_de      : std_logic;
     signal audio_sample  : std_logic_vector(23 downto 0);
@@ -217,10 +228,13 @@ architecture Behavioral of Au2_SLI is
     signal debug : std_logic_vector(7 downto 0);
 begin
     debug_pmod <= debug;    
-    led  (7 downto 6)      <= debug (7 downto 6);
+    led (7) <= vsync;
+    led (6) <= hsync;
     -- for test GPIO input pins
     --led (5)   <= C1_in(1);    led (4)   <= C1_in(0);     led (3)   <= C2_in(1);    led (2)   <= C2_in(0);
     
+    
+    led (5) <= VPolarity;
     -- for SD debugging
     -- verify clock selector
     --led (4)   <= sel;    
@@ -246,8 +260,8 @@ i_hdmi_io: hdmi_io port map (
         clk100        => clk100,
          clk200        => clk200,
          clk10 => clk10,
-         clk75        => clk75,
-         clk375        => clk375,
+         clk125        => clk125,
+         clk625        => clk625,
         ---------------------
         -- Control signals
         ---------------------
@@ -322,7 +336,7 @@ ref_clk_pll : ref_clk
     port map (
         clk_in  => clk100,    
         clk_out => clk200,
-        clk75 => clk75, clk375 => clk375,
+        clk125 => clk125, clk625 => clk625,
         clk10 => clk10
     );
 
@@ -342,24 +356,43 @@ i_DVID_input: vga port map(
  --------------------------------------------
   --   Pixel-wise alteration
  --------------------------------------------
-blank<= in_blank when sel='1' else local_blank;
-vsync<= in_vsync when sel='1' else local_vsync;
-hsync<= in_hsync when sel='1' else local_hsync;
-red<= in_red when sel='1' else local_red;
-green<= in_green when sel='1' else local_green;
-blue<= in_blue when sel='1' else local_blue;
-
+blank<= in_blank when sel_buf='1' else local_blank;
+vsync<= in_vsync when sel_buf='1' else local_vsync;
+hsync<= in_hsync when sel_buf='1' else local_hsync;
+red<= in_red when sel_buf='1' else local_red;
+green<= in_green when sel_buf='1' else local_green;
+blue<= in_blue when sel_buf='1' else local_blue;
+vsync_Pos <= vsync when VPolarity='1' else (not vsync when blank = '1' else '0');
+-- Tricky part is in_vysnc can be uncertain during visible time when V polarity is neg
+process(pixel_clk)
+begin
+    if rising_edge(pixel_clk) then
+        rdy_buf    <= C1_in(0);
+        mode_buf   <= C1_in(1); 
+        sel_buf<=sel;
+        in_vsync_reg  <= in_vsync; 
+        in_blank_reg  <= in_blank;
+        -- decide VSYNC polarity
+        if (sel_buf = '0') then
+            VPolarity <= '1';
+        elsif (in_blank ='1' and in_blank_reg='0') then --when just enter blanking
+            VPolarity <= not in_vsync;
+        else VPolarity <=VPolarity;    
+        end if;
+    end if;
+end process;
 
 i_processing: pixel_pipe Port map ( 
         clk => pixel_clk, clk10 => clk10,
         sw =>newSW,
         trig =>trig, f_frm=> f_frm, 
-        mode=>C1_in(1), rdy=> C1_in(0),
+        mode=>C1_in(1), rdy=> rdy_buf ,
           
         --
         in_blank        => blank,
         in_hsync        => hsync,
-        in_vsync        => vsync,
+        in_vsync        => vsync_Pos, -- for postion tracking and camera control
+        vsync => vsync,
         in_red          => red,
         in_green        => green,
         in_blue         => blue,    

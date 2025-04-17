@@ -122,13 +122,13 @@ ser_ch2: serialiser_10_to_1 port map (
         data   => c2_tmds_symbol,
         serial => tmds_out_ch2);
 
---ser_clk: serialiser_10_to_1 Port map (
---        clk    => pixel_io_clk_x1,
---        clk_x5 => pixel_io_clk_x5,
---        reset  => reset,
---        data   => "0000011111",
---        serial => tmds_out_clk);
-tmds_out_clk <= pixel_io_clk_x1; 
+ser_clk: serialiser_10_to_1 Port map (
+        clk    => pixel_io_clk_x1,
+        clk_x5 => pixel_io_clk_x5,
+        reset  => reset,
+        data   => "0000011111",
+        serial => tmds_out_clk);
+--tmds_out_clk <= pixel_io_clk_x1; 
 --tmds_out_clk <= pixel_clk;
 
 --My Serialiser--

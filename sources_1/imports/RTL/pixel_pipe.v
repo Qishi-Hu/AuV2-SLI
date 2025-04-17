@@ -29,7 +29,7 @@ module pixel_pipe(
     input  in_blank,
     input  in_vsync,
     input in_hsync,
-
+    input  vsync,
     output reg trig,
      output wire f_frm,
      input mode, rdy,
@@ -73,21 +73,37 @@ module pixel_pipe(
     //col index tracker
     reg [10:0] col= 11'd0;
     reg in_blank_reg;
+//    always@(posedge clk) begin
+//        in_blank_reg <=in_blank;
+//        if(in_hsync) col<=0; //exclude the first hysnc of the frame
+//        //else if (in_blank) begin if (HB==8'd219) col<=11'b1; else col<=11'b0; end
+//        else if (in_blank) begin if (HB==8'd39) col<=11'b1; else col<=11'b0; end
+//        else col<=col+11'd1;
+//    end
     always@(posedge clk) begin
-        in_blank_reg <=in_blank;
-        if(in_hsync) col<=0; //exclude the first hysnc of the frame
-        else if (in_blank) begin if (HB==8'd219) col<=11'b1; else col<=11'b0; end
-        else col<=col+11'd1;
+        if(in_blank) col<=11'd0;
+        else col<= col+11'd1;
     end
     //frame index counter with a slow motion feature that holds each frame for 32 frames 
     reg[1:0] frq=2'd0; reg[2:0] fra=3'd0; // spatial frquency index, frame index
-    reg hold=1'b0; reg rdy_reg=0; 
+    reg hold=1'b0; reg [3:0] rdy_cnt =4'h0; reg rdy_reg; reg vsync_reg;
     
-    always@(posedge in_vsync) begin   
-            rdy_reg<=rdy;   
+    //count rising edges of camera-ready GPIO input 
+    always@(posedge clk) begin
+        rdy_reg<=rdy; // buffer GPIO in a relaxed pace, may not work well if pulse come during V blank period 
+        vsync_reg<=in_vsync;       
+        if (in_vsync && ~vsync_reg) begin  // on rising edge of vsync
+            if (rdy && ~rdy_reg) rdy_cnt<=(rdy_cnt==4'h0)? 4'h1: rdy_cnt; // keep rdy_counter unchanged as incremnt and drenement happens at the same time
+            else rdy_cnt<=(rdy_cnt==4'h0)? 4'h0:rdy_cnt-4'h1; // decrement counter 
+        end
+        else if (rdy && ~rdy_reg) rdy_cnt<=rdy_cnt+4'h1; // incremnt counter for rising edge of rdy
+        else rdy_cnt<=rdy_cnt;
+    end
+    
+    always@(posedge in_vsync) begin  //// examine rdy counter at rising edge of vsync
             if(mode==1'b0) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end  
             else if (ori ^ ori_reg) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end  
-            else if (rdy && ~rdy_reg) begin // increment the SLI frame on rising edge of rdy
+            else if (rdy_cnt!= 4'h0) begin 
                      fra<=fra+3'd1; hold<=1'b0;
                      if(fra==3'd7) begin
                         frq<=frq+2'd1;
@@ -102,61 +118,38 @@ module pixel_pipe(
     wire [9:0] index;//target index
     wire [10:0] indexV;
     indexMap MAP(.a({frq,fra,row}), .qspo(index), .clk(clk));
-    indexMapV MAPV(.a({frq,fra,col}), .qspo(indexV), .clk(clk));
+    indexMapV MAPV(.a({frq,fra,in_blank?11'd0:(col+11'd1)}), .qspo(indexV), .clk(clk));
     //top-left pixel detection
     reg [7:0] TL; //-the top left pixel of current frame
     //FSM
     always@(posedge clk) begin
         case(S) 
-            V: N<= in_vsync?V:B;
-            B: N<= in_blank?B:O;
-            O: N<= in_vsync?V:O;
+            V: N<= in_vsync?V:B; // vsync period
+            B: N<= in_blank?B:O; // V back porch 
+            O: N<= in_vsync?V:O; //other
             default: N<=O; 
         endcase
     end
     //set flag: `1 - in pass-through mode when the TL pixel value changes
-    //          2 -  in pattern gen mode, if the current frame is the last during a hold period
     always@(posedge clk) begin
         S<=N;
         if((S==B)&&(N==O)) begin
             if(TL==in_red) begin
-                flag<= mode?  (hold==1'b0):1'b0; TL<=TL;
+                flag<=1'b0; TL<=TL;
                 end
             else begin
-                flag<= mode? (hold==1'b0):1'b1 ; TL<=in_red;
+                flag<= 1'b1 ; TL<=in_red;
                 end
         end
         else begin 
-            TL<=TL; flag<= 1'b0;
+            TL<=TL; flag<= flag;
         end            
     end
    
-    //one-hot endcoding FSM for trigger output 8.1 msec (1s/120), that is about 601425 cycles 0x925D1
-    // to make life easier we use 0x80000, corresponding 7.06 msec 
-    reg [2:0] D=3'b000; //D[2] is trigger ready, D[1] is flag ready waiting for Vsync, D[0] is reset state waiting for flag
+    //set trigger pulse
     always@(posedge clk) begin
-        D[0]<=flag;
-        D[1]<=D[0]|(D[1]&(~in_vsync));
-        D[2]<=D[1]&in_vsync;
-    end
-    reg [20:1] cnt=20'h00000; 
-    always@(posedge clk) begin
-        if (D[2])  begin
-            cnt<=20'h00001; // set counter to 1 to begin exposure
-            trig<=1'b1;
-        end
-        else if (cnt[20]) begin
-            cnt<=20'h00000; // end of exposure
-            trig<=1'b0;
-        end
-        else if (cnt==20'h00000) begin //rest
-            cnt<=cnt;
-            trig<=1'b0;
-        end
-        else begin   //exposure time
-            cnt<=cnt+1;
-            trig<=1'b1;
-        end
+        if(S==V) trig<=mode? ~hold: flag;
+        else trig<=0;
     end
     assign f_frm = (fra==3'd0)&&(frq==3'b0);
     
@@ -178,5 +171,5 @@ module pixel_pipe(
    assign out_red = mode? (in_blank? in_red: en_R?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ): in_red ;  
    assign out_green = mode?  (in_blank? in_green: en_G?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ) : in_green ; 
    assign out_blue = mode? (in_blank? in_blue: en_B?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ):in_blue ;
-    assign out_hsync =in_hsync; assign out_vsync =in_vsync;  assign out_blank =in_blank; 
+    assign out_hsync =in_hsync; assign out_vsync =vsync;  assign out_blank =in_blank; 
 endmodule
