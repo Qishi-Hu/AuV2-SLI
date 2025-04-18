@@ -39,7 +39,8 @@ The **Active Signal Mode** is the actual setting of the HDMI signal, if it is no
 - For side-to-side scanning, `indexMappingV.m` maps the combination of a pixel’s column index and frame index to an index in the start frame LUT. This MATLAB script outputs the `indexMapV.coe` that initializes a read-only memory (ROM) module on the FPGA to store the mapping.
 - The start frame LUTs for both scanning orientations are defined in `LUT2coe.m`, which outputs `LUT.coe` and `LUT_V.coe` so that they can be hardcoded through read-only memory (ROM) modules.
 - The FPGA increments the frame index and triggers the camera on VSYNC, as long as the camera signals that it is ready (by sending a rising edge).
-
+### 3. Offline Mode
+When the HDMI input is absent, the FPGA enters offline mode. This mode is similar to Mode #2, but the pattern is generated using the local oscillator clock. The pattern is projected at a fixed resolution of 1280x720 at 120Hz.
 ## GPIO pin assignments
 | Camera Interface  | FPGA Pins | DB9 Pins | Purpose                                         | I/O (from FPGA's POV)             |
 |------------|-----------|----------|-------------------------------------------------|-----------------------------------|
@@ -67,7 +68,7 @@ The **Active Signal Mode** is the actual setting of the HDMI signal, if it is no
 ## Directory Structure
 <pre>
 ├── README.md           # Overview of the repository  
-├── Au2_SLI.xpr.zip   # Archive of the source Vivado 2024.1 project  
+├── Au2_SLI.zip   # Archive of the source Vivado 2024.1 project  
 ├── Bitsrteam/          # Final bitstream files  
 ├── Matlab/             # .m scripts and output files  
 ├── src_1/              # Source HDLand Matlab code  
