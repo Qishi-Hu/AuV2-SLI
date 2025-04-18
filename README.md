@@ -21,7 +21,7 @@ The HDMI input should be automtcially conifgured after it reads the EDID from th
 ![Screenshot 2025-04-17 201139](https://github.com/user-attachments/assets/5b7a5cb5-8982-4aa2-bfc6-cf27cb00fb06)
 
 
-The **Active Signal Mode** is the actual setting of the HDMI signal, if it is not for 720p@60Hz (59.xx Hz or 60.xx Hz are also acceptable), please go to **System > Display > Advanced Settings > Adapter Properties > List All Modes** to manually set the correct mode.
+The **Active Signal Mode** is the actual setting of the HDMI signal, if it is not matching the desired resolution and FPS, please go to **System > Display > Advanced Settings > Adapter Properties > List All Modes** to manually set the correct mode.
 
 ## Specifications of FPGA Controller Modes
 
