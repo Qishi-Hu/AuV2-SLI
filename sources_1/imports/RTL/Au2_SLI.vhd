@@ -386,7 +386,7 @@ i_processing: pixel_pipe Port map (
         clk => pixel_clk, clk10 => clk10,
         sw =>newSW,
         trig =>trig, f_frm=> f_frm, 
-        mode=>C1_in(1), rdy=> rdy_buf ,
+        mode=>mode_buf, rdy=> rdy_buf ,
           
         --
         in_blank        => blank,

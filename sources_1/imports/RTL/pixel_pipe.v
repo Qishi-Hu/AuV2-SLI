@@ -87,23 +87,39 @@ module pixel_pipe(
     //frame index counter with a slow motion feature that holds each frame for 32 frames 
     reg[1:0] frq=2'd0; reg[2:0] fra=3'd0; // spatial frquency index, frame index
     reg hold=1'b0; reg [3:0] rdy_cnt =4'h0; reg rdy_reg; reg vsync_reg;
-    
+    reg mode_reg; reg mode_rising; reg mode_rising_4_rdy;
+    reg display_mode;
+     always@(posedge clk) begin
+        rdy_reg<=rdy; // buffer GPIO in a relaxed pace, may not work well if pulse come during V blank period 
+        vsync_reg<=in_vsync; 
+
+        if (~in_vsync && vsync_reg) display_mode <= mode;
+    end
     //count rising edges of camera-ready GPIO input 
     always@(posedge clk) begin
-        rdy_reg<=rdy; // buffer GPIO in a relaxed pace, may not work well if pulse come during V blank period 
-        vsync_reg<=in_vsync;       
+         
+        mode_reg <=mode;     
+        if (mode && ~mode_reg) mode_rising <=1'b1;
+        else mode_rising <=mode_rising;        
+        
         if (in_vsync && ~vsync_reg) begin  // on rising edge of vsync
-            if (rdy && ~rdy_reg) rdy_cnt<=(rdy_cnt==4'h0)? 4'h1: rdy_cnt; // keep rdy_counter unchanged as incremnt and drenement happens at the same time
+            if (mode_rising && display_mode) begin rdy_cnt<=4'h1;  mode_rising<=0; end
+            else if (rdy && ~rdy_reg) rdy_cnt<=(rdy_cnt==4'h0)? 4'h1: rdy_cnt; // keep rdy_counter unchanged as incremnt and drenement happens at the same time
             else rdy_cnt<=(rdy_cnt==4'h0)? 4'h0:rdy_cnt-4'h1; // decrement counter 
         end
-        else if (rdy && ~rdy_reg) rdy_cnt<=rdy_cnt+4'h1; // incremnt counter for rising edge of rdy
+        else if (rdy && ~rdy_reg) begin
+            if (mode_rising)   rdy_cnt<=4'h0;
+            else rdy_cnt<=rdy_cnt+4'h1; // incremnt counter for rising edge of rdy
+            end
+       // else if (~in_vsync && vsync_reg && mode_rising && display_mode) begin rdy_cnt<=4'h1;  mode_rising<=0;  end //set counter to 1 for mode changes
         else rdy_cnt<=rdy_cnt;
-    end
+    end    
     
-    always@(posedge in_vsync) begin  //// examine rdy counter at rising edge of vsync
-            if(mode==1'b0) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end  
-            else if (ori ^ ori_reg) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end  
-            else if (rdy_cnt!= 4'h0) begin 
+    always@(posedge clk) begin  //// examine rdy counter at rising edge of vsync
+        if(mode==1'b0) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end 
+        else if (in_vsync && ~vsync_reg) begin             
+            if (ori ^ ori_reg) begin frq<=2'd0; fra<=3'd0; hold<=1'b1; end  
+            else if  (rdy_cnt!= 4'h0)   begin //when edge counter is non-zero 
                      fra<=fra+3'd1; hold<=1'b0;
                      if(fra==3'd7) begin
                         frq<=frq+2'd1;
@@ -112,8 +128,8 @@ module pixel_pipe(
             else begin
                 fra<=fra; hold<=1'b1; frq<=frq;
             end
+        end
     end  
-      
     //index mapping; find the correspoding index in the input LUT, according to current row,frq, and fra
     wire [9:0] index;//target index
     wire [10:0] indexV;
@@ -168,8 +184,8 @@ module pixel_pipe(
     LUT LUT_ins (.a(index),.spo(pix));
     LUT_V LUTV_ins (.a(indexV),.spo(pixV));
     
-   assign out_red = mode? (in_blank? in_red: en_R?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ): in_red ;  
-   assign out_green = mode?  (in_blank? in_green: en_G?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ) : in_green ; 
-   assign out_blue = mode? (in_blank? in_blue: en_B?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ):in_blue ;
+   assign out_red = display_mode? (in_blank? in_red: en_R?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ): in_red ;  
+   assign out_green = display_mode?  (in_blank? in_green: en_G?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ) : in_green ; 
+   assign out_blue = display_mode? (in_blank? in_blue: en_B?(frq==2'b11 ? (fra[0]?8'hFF:8'h00) : (ori?pix:pixV)  ): 8'h00 ):in_blue ;
     assign out_hsync =in_hsync; assign out_vsync =vsync;  assign out_blank =in_blank; 
 endmodule
