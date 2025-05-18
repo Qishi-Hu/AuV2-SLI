@@ -65,6 +65,18 @@ When the HDMI input is absent, the FPGA enters offline mode. This mode is simila
 | SW[2]           |A11     | Enable (1) / Disable(0) the  Green channel      |
 | SW[1]           |A6     | Enable (1) / Disable(0) the  Blue channel       |
 |SW[0]          |A5     | 0 for vertical stripes, 1 for horizontal stripes |
+
+## LED indicators
+| LED (Index) | Indication                                                      |
+|-------------|------------------------------------------------------------------|
+| 7           | VSYNC                                                           |
+| 6           | HSYNC                                                           |
+| 5           | VYSNC Polarity (1 for postive, 0 for negative)                       |
+| 4           | On if hdmi_rx_clk is detected, off for offline mode (using oscillator clock)|
+| 3           | 0 for SLI pattern, 1 for desktop dispaly (black screen if in offline mode)                     |
+| 2           | On if camera trigger is ready                                                   |
+| 1           | On if the current frame is the first frame of the pattern                                                   |
+| 0           | Trigger Output                                                       |
 ## Directory Structure
 <pre>
 ├── README.md           # Overview of the repository  
