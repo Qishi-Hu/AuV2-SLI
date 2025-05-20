@@ -81,7 +81,7 @@ When the HDMI input is absent, the FPGA enters offline mode. This mode is simila
 <pre>
 ├── README.md           # Overview of the repository  
 ├── Au2_SLI.zip   # Archive of the source Vivado 2024.1 project  
-├── Bitsrteam/          # Final bitstream files  
+├── Bitsrteam/          # Final bitstream files, the optomaML1080.bin is working for 720p@60Hz for the specific projetcor.
 ├── Matlab/             # .m scripts and output files  
 ├── src_1/              # Source HDLand Matlab code  
 └── constr_1/           #  Xlinx Design Constarint  
